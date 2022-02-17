@@ -3,7 +3,8 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "start": "node ./bin/www"
+    "start": "node ./bin/www",
+    "watch": "nodemon ./bin/www"
   },
   "dependencies": {
     "@harmony-js/account": "^0.1.57",
@@ -15,6 +16,7 @@
     "@harmony-js/transaction": "^0.1.56",
     "@harmony-js/utils": "^0.1.56",
     "axios": "^0.26.0",
+    "bip39": "^3.0.4",
     "cookie-parser": "~1.4.4",
     "debug": "~2.6.9",
     "express": "~4.16.1",
