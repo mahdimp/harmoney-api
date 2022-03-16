@@ -1,9 +1,10 @@
 const { Account, Wallet } = require('@harmony-js/account')
 const { HttpProvider, Messenger } = require('@harmony-js/network')
-const { ChainID, ChainType } = require('@harmony-js/utils')
-const {apiAddress, requestConfigs} = require('../constants')
+const { ChainID, ChainType, Unit } = require('@harmony-js/utils')
+const { apiAddress, requestConfigs } = require('../constants')
 const axios = require('axios').default
 const bip39 = require('bip39')
+const { Harmony } = require('@harmony-js/core')
 
 const {
   generatePrivateKey,
@@ -13,6 +14,7 @@ const {
 
 
 var express = require('express')
+const res = require('express/lib/response')
 var router = express.Router()
 
 
@@ -43,15 +45,15 @@ router.get('/wallet/new', function (req, res, next) {
       ChainID.RootstockMainnet,
     ),
   );
-  
+
   const account = wallet.addByPrivateKey(privateKey)
   account.privateKey
 
   return res.json({
     accountAddress: account.address,
-    privateKey : account.privateKey,
-    publicKey : account.publicKey,
-    accountBech32Address : account.bech32Address,
+    privateKey: account.privateKey,
+    publicKey: account.publicKey,
+    accountBech32Address: account.bech32Address,
   })
 })
 
@@ -78,7 +80,7 @@ router.get('/wallet/in-transactions/:address', function (req, res, next) {
     .then(function (response) {
       const { transactions } = response.data.result || []
       res.json({
-        result : {
+        result: {
           transactions
         }
       })
@@ -102,10 +104,41 @@ router.get('/wallet/balance/:address', function (req, res, next) {
 
     res.json({
       result: {
-        balance: balance
+        balance
       }
     })
   })
 })
+
+router.post('/tx/new', function (req) {
+  const { to, privateKey, gasLimit, amount, gasPrice } = req.body;
+
+  const hmy = new Harmony(
+    apiAddress,
+    {
+      chainType: ChainType.Harmony,
+      chainId: ChainID.HmyMainnet,
+    },
+  );
+
+  const txn = hmy.transactions.newTx({
+    to,
+    value: new Unit(amount).asOne().toWei(),
+    gasLimit,
+    shardID: 0,
+    toShardID: 0,
+    gasPrice: new hmy.utils.Unit(gasPrice).asGwei().toWei(),
+    data: '0x',
+  });
+
+  hmy.wallet.addByPrivateKey(privateKey)
+  hmy.wallet.signTransaction(txn).then(signedTransaction => {
+    signedTransaction.sendTransaction().then(([tx, hash]) => {
+      res.json({
+        result: { hash}
+      })
+    })
+  })
+});
 
 module.exports = router
