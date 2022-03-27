@@ -1,24 +1,21 @@
 const { Account, Wallet } = require('@harmony-js/account')
 const { HttpProvider, Messenger } = require('@harmony-js/network')
 const { ChainID, ChainType, Unit } = require('@harmony-js/utils')
+const { Harmony } = require('@harmony-js/core')
 const { apiAddress, requestConfigs } = require('../constants')
 const axios = require('axios').default
-const bip39 = require('bip39')
-const { Harmony } = require('@harmony-js/core')
 
 const {
   generatePrivateKey,
   getPubkeyFromPrivateKey,
 } = require('@harmony-js/crypto');
 
-
-
 var express = require('express')
 const res = require('express/lib/response')
 var router = express.Router()
 
-
-router.get('/account/balance/:address', function (req, res, next) {
+// get account balance
+router.get('/account/balance/:address', function (req, res) {
   const { address } = req.params
 
   const account = new Account(
@@ -34,9 +31,9 @@ router.get('/account/balance/:address', function (req, res, next) {
   })
 })
 
-router.get('/wallet/new', function (req, res, next) {
+// create new wallet
+router.get('/wallet/new', function (req, res) {
   const privateKey = generatePrivateKey();
-  const publicKey = getPubkeyFromPrivateKey(privateKey);
 
   const wallet = new Wallet(
     new Messenger(
@@ -57,7 +54,8 @@ router.get('/wallet/new', function (req, res, next) {
   })
 })
 
-router.get('/wallet/in-transactions/:address', function (req, res, next) {
+// get list of in transactions of an address
+router.get('/wallet/in-transactions/:address', function (req, res) {
   const { address } = req.params
 
   const payload = {
@@ -86,7 +84,9 @@ router.get('/wallet/in-transactions/:address', function (req, res, next) {
       })
     })
 })
-router.get('/wallet/balance/:address', function (req, res, next) {
+
+// get balance of an address
+router.get('/wallet/balance/:address', function (req, res) {
   const { address } = req.params
 
   const payload = {
@@ -110,8 +110,10 @@ router.get('/wallet/balance/:address', function (req, res, next) {
   })
 })
 
+// create a new transaction
 router.post('/tx/new', function (req) {
-  const { to, privateKey, gasLimit, amount, gasPrice } = req.body;
+  const { to, gasLimit, amount, gasPrice } = req.body;
+  const privateKey = process.env.PRIVATE_KEY;
 
   const hmy = new Harmony(
     apiAddress,
@@ -133,7 +135,7 @@ router.post('/tx/new', function (req) {
 
   hmy.wallet.addByPrivateKey(privateKey)
   hmy.wallet.signTransaction(txn).then(signedTransaction => {
-    signedTransaction.sendTransaction().then(([tx, hash]) => {
+    signedTransaction.sendTransaction().then(([, hash]) => {
       res.json({
         result: { hash}
       })
