@@ -8,7 +8,7 @@ const axios = require('axios').default
 const {
   generatePrivateKey,
   getPubkeyFromPrivateKey,
-} = require('@harmony-js/crypto');
+} = require('@harmony-js/crypto')
 
 var express = require('express')
 const res = require('express/lib/response')
@@ -33,7 +33,7 @@ router.get('/account/balance/:address', function (req, res) {
 
 // create new wallet
 router.get('/wallet/new', function (req, res) {
-  const privateKey = generatePrivateKey();
+  const privateKey = generatePrivateKey()
 
   const wallet = new Wallet(
     new Messenger(
@@ -41,7 +41,7 @@ router.get('/wallet/new', function (req, res) {
       ChainType.Harmony,
       ChainID.RootstockMainnet,
     ),
-  );
+  )
 
   const account = wallet.addByPrivateKey(privateKey)
   account.privateKey
@@ -111,36 +111,59 @@ router.get('/wallet/balance/:address', function (req, res) {
 })
 
 // create a new transaction
-router.post('/tx/new', function (req) {
-  const { to, gasLimit, amount, gasPrice } = req.body;
-  const privateKey = process.env.PRIVATE_KEY;
+router.post('/tx/new', function (req, res) {
+  const { to, amount } = req.body
+  const privateKey = process.env.PRIVATE_KEY
 
-  const hmy = new Harmony(
-    apiAddress,
-    {
-      chainType: ChainType.Harmony,
-      chainId: ChainID.HmyMainnet,
-    },
-  );
+    (async () => {
+      try {
+        const hmy = new Harmony(
+          apiAddress,
+          {
+            chainType: ChainType.Harmony,
+            chainId: ChainID.HmyMainnet,
+          },
+        )
 
-  const txn = hmy.transactions.newTx({
-    to,
-    value: new Unit(amount).asOne().toWei(),
-    gasLimit,
-    shardID: 0,
-    toShardID: 0,
-    gasPrice: new hmy.utils.Unit(gasPrice).asGwei().toWei(),
-    data: '0x',
-  });
+        const txn = hmy.transactions.newTx({
+          to,
+          value: new Unit(amount).asOne().toWei(),
+          shardID: 0,
+          toShardID: 0,
+          gasLimit: new Unit(210000).asWei().toWei(),
+          gasPrice: new Unit(100).asGwei().toWei(),
+          data: '0x',
+        })
 
-  hmy.wallet.addByPrivateKey(privateKey)
-  hmy.wallet.signTransaction(txn).then(signedTransaction => {
-    signedTransaction.sendTransaction().then(([, hash]) => {
-      res.json({
-        result: { hash}
-      })
-    })
-  })
-});
+        hmy.wallet.addByPrivateKey(privateKey)
+        const signed = await hmy.wallet.signTransaction(txn)
+        const [transaction, hash] = await signed.sendTransaction()
+        const confirmed = await transaction.confirm(hash, 20, 1000)
+        if (confirmed) {
+          res.json({
+            hash,
+            receipt: confirmed.receipt,
+          })
+        }
+        else {
+          res.json({
+            error: 'transaction not sent'
+          })
+        }
+      }
+      catch (e) {
+        let error
+        if (e instanceof Error) {
+          error = e.message
+        } else {
+          error = e
+        }
+        res.json({
+          error
+        })
+      }
+    })()
+
+})
 
 module.exports = router
