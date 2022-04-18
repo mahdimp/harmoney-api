@@ -111,11 +111,9 @@ router.get('/wallet/balance/:address', function (req, res) {
 })
 
 // create a new transaction
-router.post('/tx/new', function (req, res) {
-  const { to, amount } = req.body
-  const privateKey = process.env.PRIVATE_KEY
+router.post('/tx/new', async function (req, res) {
+  const { to, amount ,privateKey } = req.body
 
-    (async () => {
       try {
         const hmy = new Harmony(
           apiAddress,
@@ -161,7 +159,7 @@ router.post('/tx/new', function (req, res) {
           error
         })
       }
-    })()
+
 
 })
 
