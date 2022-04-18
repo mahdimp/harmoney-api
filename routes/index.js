@@ -142,7 +142,6 @@ router.post('/tx/new', function (req, res) {
         if (confirmed) {
           res.json({
             hash,
-            receipt: confirmed.receipt,
           })
         }
         else {
