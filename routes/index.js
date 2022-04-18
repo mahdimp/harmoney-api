@@ -112,55 +112,53 @@ router.get('/wallet/balance/:address', function (req, res) {
 
 // create a new transaction
 router.post('/tx/new', async function (req, res) {
-  const { to, amount ,privateKey } = req.body
+  const { to, amount, privateKey } = req.body
 
-      try {
-        const hmy = new Harmony(
-          apiAddress,
-          {
-            chainType: ChainType.Harmony,
-            chainId: ChainID.HmyMainnet,
-          },
-        )
+  try {
+    const hmy = new Harmony(
+      apiAddress,
+      {
+        chainType: ChainType.Harmony,
+        chainId: ChainID.HmyMainnet,
+      },
+    )
 
-        const txn = hmy.transactions.newTx({
-          to,
-          value: new Unit(amount).asOne().toWei(),
-          shardID: 0,
-          toShardID: 0,
-          gasLimit: new Unit(210000).asWei().toWei(),
-          gasPrice: new Unit(100).asGwei().toWei(),
-          data: '0x',
-        })
+    const txn = hmy.transactions.newTx({
+      to,
+      value: new Unit(amount).asOne().toWei(),
+      shardID: 0,
+      toShardID: 0,
+      gasLimit: new Unit(210000).asWei().toWei(),
+      gasPrice: new Unit(100).asGwei().toWei(),
+      data: '0x',
+    })
 
-        hmy.wallet.addByPrivateKey(privateKey)
-        const signed = await hmy.wallet.signTransaction(txn)
-        const [transaction, hash] = await signed.sendTransaction()
-        const confirmed = await transaction.confirm(hash, 20, 1000)
-        if (confirmed) {
-          res.json({
-            hash,
-          })
-        }
-        else {
-          res.json({
-            error: 'transaction not sent'
-          })
-        }
-      }
-      catch (e) {
-        let error
-        if (e instanceof Error) {
-          error = e.message
-        } else {
-          error = e
-        }
-        res.json({
-          error
-        })
-      }
-
-
+    hmy.wallet.addByPrivateKey(privateKey)
+    const signed = await hmy.wallet.signTransaction(txn)
+    const [transaction, hash] = await signed.sendTransaction()
+    const confirmed = await transaction.confirm(hash, 20, 1000)
+    if (confirmed) {
+      res.json({
+        hash,
+      })
+    }
+    else {
+      res.json({
+        error: 'Transaction not sent'
+      })
+    }
+  }
+  catch (e) {
+    let error
+    if (e instanceof Error) {
+      error = e.message
+    } else {
+      error = e
+    }
+    res.json({
+      error
+    })
+  }
 })
 
 module.exports = router
