@@ -25,7 +25,7 @@ router.get('/wallet/new', function (req, res) {
     )
     const account = wallet.addByPrivateKey(privateKey)
     account.privateKey
-    return res.json({
+    res.json({
       accountAddress: account.address,
       privateKey: account.privateKey,
       publicKey: account.publicKey,
@@ -33,7 +33,7 @@ router.get('/wallet/new', function (req, res) {
     })
   } catch (e) {
     const error = getError(e)
-    return res.json({
+    res.json({
       error
     })
   }
@@ -69,7 +69,7 @@ router.get('/wallet/in-transactions/:address', function (req, res) {
       })
   } catch (e) {
     const error = getError(e)
-    return res.json({
+    res.json({
       error
     })
   }
@@ -98,7 +98,33 @@ router.get('/wallet/balance/:address', function (req, res) {
     })
   } catch (e) {
     const error = getError(e)
-    return res.json({
+    res.json({
+      error
+    })
+  }
+})
+
+// get transaction status
+router.get('/transaction/status/:address', function (req, res) {
+  try {
+    const { address } = req.params
+    const payload = {
+      "id": "1",
+      "jsonrpc": "2.0",
+      "method": "hmyv2_getTransactionReceipt",
+      "params": [
+        address
+      ]
+    }
+    axios.post(apiAddress, payload, requestConfigs).then((response) => {
+      const { result } = response.data
+      const status = result?.status === 1 ? 'success' : 'failed'
+      res.json({
+        status,
+      })
+    })
+  } catch (e) {
+    res.json({
       error,
     })
   }
