@@ -105,15 +105,15 @@ router.get('/wallet/balance/:address', function (req, res) {
 })
 
 // get transaction status
-router.get('/transaction/status/:address', function (req, res) {
+router.get('/transaction/status/:hash', function (req, res) {
   try {
-    const { address } = req.params
+    const { hash } = req.params
     const payload = {
       "id": "1",
       "jsonrpc": "2.0",
       "method": "hmyv2_getTransactionReceipt",
       "params": [
-        address
+        hash
       ]
     }
     axios.post(apiAddress, payload, requestConfigs).then((response) => {
